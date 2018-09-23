@@ -13,4 +13,9 @@ namespace TextModel {
     return 0;
   }
 
+  std::ostream& operator<<(std::ostream& lhs, PieceTable const& rhs) {
+    lhs << rhs.original_;
+    return lhs;
+  }
+
 } // TextModel

@@ -24,6 +24,10 @@ TEST_CASE("PieceTable are implementing the Buffer interface") {
       const PieceTable same_hello_world_text{"Hello, World!"};
       REQUIRE(hello_world_text == same_hello_world_text);
     }
+    SECTION("for unequality") {
+      const PieceTable something_text{"something"};
+      REQUIRE(hello_world_text != something_text);
+    }
   }
 }
 
