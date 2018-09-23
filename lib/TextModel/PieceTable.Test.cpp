@@ -31,7 +31,8 @@ TEST_CASE("PieceTable are implementing the Buffer interface") {
   }
 }
 
-// TEST_CASE("Inserting into PieceTable") {
-//   PieceTable piece_table{"Hello, World!"};
-//   piece_table.insert(6, "wonderful ");
-// }
+TEST_CASE("Inserting into PieceTable") {
+  PieceTable piece_table{"Hello, World!"};
+  piece_table.insert(7, "wonderful ");
+  REQUIRE(text_of(piece_table) == "Hello, wonderful World!");
+}

@@ -15,7 +15,7 @@ namespace TextModel {
     virtual ~Buffer() = default;
     virtual void insert(Index, String) = 0;
     virtual void remove(Range) = 0;
-    virtual String text_of(Range) = 0;
+    virtual String text_of(Range) const = 0;
     virtual Index size() const = 0;
   };
 } // TextModel
