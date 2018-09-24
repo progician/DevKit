@@ -9,6 +9,7 @@ target_include_directories(TextModel PUBLIC ${TOP_LEVEL_INCLUDE_DIR})
 
 add_executable(TextModelUnit
   TextModel/PieceTable.Test.cpp
+  TextModel/SplayTree.Test.cpp
   TextModel/TextModel_Test.cpp
 )
 target_link_libraries(TextModelUnit PRIVATE TextModel UnitTestMain)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(DevKit 0.1)
+project(DevKit VERSION 0.1)
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_BINARY_DIR})
 
