@@ -1,5 +1,7 @@
 #include "TextModel/PieceTable.h"
 #include <numeric>
+#include <stdexcept>
+
 
 namespace TextModel {
 
@@ -22,6 +24,7 @@ namespace TextModel {
 
   PieceTable::PieceTable(String original)
   : original_{std::move(original)}
+  , size_{original_.size()}
   , operations_{{original_.size(), original_, 0}} {}
 
 
@@ -51,10 +54,34 @@ namespace TextModel {
           operation_at_insertion.source_begin + insertion_point.relative_index
       });
     }
+    size_ += piece_size;
   }
 
 
-  void PieceTable::remove(Range) {}
+  void PieceTable::remove(Range range) {
+    auto start_operation = operation_at(range.start);
+    auto end_operation = operation_at(range.end);
+
+    const auto op_to_split = *(end_operation.which);
+
+    auto it = start_operation.which;
+    if (start_operation.relative_index > 0) {
+      it->size = range.start;
+      ++it;
+    }
+
+    if (it != std::end(operations_)) {
+      operations_.erase(it, end_operation.which);
+    }
+
+    if (end_operation.relative_index > 0) {
+      operations_.push_back(Operation{
+          op_to_split.size - end_operation.relative_index,
+          op_to_split.source,
+          op_to_split.source_begin + end_operation.relative_index
+      });
+    }
+  }
 
   String PieceTable::text_of(Range) const {
     return std::accumulate(
@@ -68,7 +95,7 @@ namespace TextModel {
   }
 
   Index PieceTable::size() const {
-    return 0;
+    return size_;
   }
 
   String text_of(PieceTable const& piece_table) {

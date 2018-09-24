@@ -14,25 +14,42 @@ TEST_CASE("PieceTable are implementing the Buffer interface") {
 
   SECTION("can be initialised by a string") {
     PieceTable piece_table{"some text"};
-    Range full_range{0, piece_table.size()};
-    REQUIRE(piece_table.text_of(full_range) == "some text");
+    REQUIRE(text_of(piece_table) == "some text");
   }
 
-  SECTION("can be equality-compared") {
-    const PieceTable hello_world_text{"Hello, World!"};
-    SECTION("for equality") {
-      const PieceTable same_hello_world_text{"Hello, World!"};
-      REQUIRE(hello_world_text == same_hello_world_text);
-    }
-    SECTION("for unequality") {
-      const PieceTable something_text{"something"};
-      REQUIRE(hello_world_text != something_text);
-    }
+  SECTION("size is the full text size") {
+    String arbitrary_text{"Hello, World!"};
+    PieceTable piece_table{arbitrary_text};
+    REQUIRE(piece_table.size() == arbitrary_text.size());
   }
 }
 
-TEST_CASE("Inserting into PieceTable") {
-  PieceTable piece_table{"Hello, World!"};
-  piece_table.insert(7, "wonderful ");
-  REQUIRE(text_of(piece_table) == "Hello, wonderful World!");
+TEST_CASE("Manipulating PieceTables consist of") {
+  static const String original_text{"Hello, World!"};
+  static const String wedged_text{"wonderful "};
+  PieceTable piece_table{original_text};
+
+  SECTION("inserting a piece of string at some position") {
+    piece_table.insert(7, wedged_text);
+    REQUIRE(text_of(piece_table) == "Hello, wonderful World!");
+
+    SECTION("the size of piece table grows with the length of the inserted"
+            "string") {
+      const auto new_size = std::size(original_text) + std::size(wedged_text);
+      REQUIRE(piece_table.size() == new_size); 
+    }
+  }
+
+  SECTION("removing substring from a single piece") {
+    piece_table.remove({5, 7});
+    REQUIRE(text_of(piece_table) == "HelloWorld!");
+  }
+
+  SECTION("removing substring that includes a previous insertion") {
+    piece_table.insert(7, wedged_text);
+    SECTION("entirely") {
+      piece_table.remove({7, 7 + std::size(wedged_text)});
+      REQUIRE(text_of(piece_table) == original_text);
+    }
+  }
 }

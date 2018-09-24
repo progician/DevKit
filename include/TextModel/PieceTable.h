@@ -16,6 +16,8 @@ namespace TextModel {
       String& source;
       Index source_begin;
     };
+    Index size_{0};
+
     using OperationList = std::list<Operation>;
     OperationList operations_;
 
@@ -35,13 +37,6 @@ namespace TextModel {
 
     String text_of(Range) const override;
     Index size() const override;
-
-    bool operator==(PieceTable const& rhs) const {
-      return original_ == rhs.original_;
-    };
-    bool operator!=(PieceTable const& rhs) const {
-      return original_ != rhs.original_;
-    };
 
     friend std::ostream& operator<<(std::ostream&, const PieceTable&);
   };
