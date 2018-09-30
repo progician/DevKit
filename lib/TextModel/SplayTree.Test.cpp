@@ -1,5 +1,7 @@
 #include "catch2/catch.hpp"
 
+#include <algorithm>
+#include <numeric>
 #include <memory>
 
 template<class T>
@@ -8,6 +10,7 @@ template<class T>
 
 template<class T>
   class Tree {
+  public:
     struct Node {
       using NodePtr = SharedPtr<const Node>;
 
@@ -40,14 +43,13 @@ template<class T>
 
     template<class InputIterator>
       Tree(InputIterator begin, InputIterator end) {
-        Tree result;
-        std::for_each(
-            begin, end,
-            [&result](T const& v) {
-              result = With(result, v);
+        Tree from_sequence;
+        std::for_each(begin, end,
+            [&from_sequence](T elem) {
+              from_sequence = With(from_sequence, elem);
             }
         );
-        root_ = result.root_;
+        root_ = from_sequence.root_;
       }
 
     bool empty() const noexcept { return !root_; }
@@ -98,6 +100,18 @@ template<class T>
   }
 
 
+template<class T>
+  std::size_t HeightOf(Tree<T> const& tree) {
+    if (tree.empty()) {
+      return 0;
+    }
+    else {
+      const auto height_of_left = HeightOf(tree.left());
+      const auto height_of_right = HeightOf(tree.right());
+      return std::max(height_of_left, height_of_right) + 1;
+    }
+  }
+
 TEST_CASE("Simple binary search tree") {
   using TreeOfIntegers = Tree<int>;
   TreeOfIntegers tree{4, 2, 7};
@@ -111,4 +125,26 @@ TEST_CASE("Binary tree can be constructed from any sequence") {
   TreeOfIntegers tree(test_sequence.begin(), test_sequence.end());
   REQUIRE(Has(tree, 89));
   REQUIRE(!Has(tree, 100));
+}
+
+
+TEST_CASE("The height of a tree") {
+  using TreeOfIntegers = Tree<int>;
+  TreeOfIntegers empty_tree;
+  SECTION("for an empty tree") {
+    REQUIRE(HeightOf(empty_tree) == 0);
+  }
+
+  SECTION("single element tree") {
+    const TreeOfIntegers tree_of_single_element{123};
+    REQUIRE(HeightOf(tree_of_single_element) == 1);
+  }
+
+  SECTION("consecutively less elements") {
+    std::vector<int> consecutively_less_elements{10, 9, 8};
+    const TreeOfIntegers tree_of_single_element{
+      consecutively_less_elements.begin(), consecutively_less_elements.end()
+    };
+    REQUIRE(HeightOf(tree_of_single_element) == consecutively_less_elements.size());
+  }
 }
