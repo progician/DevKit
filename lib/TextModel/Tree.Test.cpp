@@ -1,8 +1,10 @@
 #include "catch2/catch.hpp"
 
 #include <algorithm>
-#include <numeric>
+#include <iterator>
 #include <memory>
+#include <numeric>
+#include <stack>
 
 template<class T>
   using SharedPtr = std::shared_ptr<T>;
@@ -11,9 +13,9 @@ template<class T>
 template<class T>
   class Tree {
   public:
+    struct Node;
+    using NodePtr = SharedPtr<const Node>;
     struct Node {
-      using NodePtr = SharedPtr<const Node>;
-
       NodePtr left;
       T value;
       NodePtr right;
@@ -23,7 +25,7 @@ template<class T>
       , value{v}
       , right{rhs} {}
     };
-    SharedPtr<const Node> root_;
+    NodePtr root_;
 
     explicit Tree(SharedPtr<const Node> root) noexcept
     : root_{root} {}
@@ -36,7 +38,7 @@ template<class T>
     Tree(std::initializer_list<T> init_list) {
       Tree result;
       for (auto elem : init_list) {
-        result = With(result, elem);
+        result = Inserted(result, elem);
       }
       root_ = result.root_;
     }
@@ -46,7 +48,7 @@ template<class T>
         Tree from_sequence;
         std::for_each(begin, end,
             [&from_sequence](T elem) {
-              from_sequence = With(from_sequence, elem);
+              from_sequence = Inserted(from_sequence, elem);
             }
         );
         root_ = from_sequence.root_;
@@ -56,11 +58,85 @@ template<class T>
     T root() const noexcept { return root_->value; }
     Tree left() const noexcept { return Tree{root_->left}; }
     Tree right() const noexcept { return Tree{root_->right}; }
+
+    class Iterator
+    : public std::iterator<std::output_iterator_tag, T> {
+      NodePtr current_{nullptr};
+      std::stack<NodePtr> path_;
+
+      Iterator(Tree const& tree) {
+        current_ = tree.root_;
+        while (current_->left) {
+          path_.push(current_);
+          current_ = current_->left;
+        }
+      }
+
+      Iterator() = default;
+
+      friend class Tree;
+
+    public:
+      Iterator(Iterator const& other)
+      : current_{other.current_}
+      , path_{other.path_} {}
+
+      T const& operator*() const {
+        return current_->value;
+      }
+
+      T const* operator->() const {
+        return current_.get();
+      }
+
+      Iterator& operator++() {
+        if (!current_) {
+          return *this;
+        }
+        else if (path_.empty()) {
+          current_.reset();
+          return *this;
+        }
+        else if (current_ == path_.top()->left) {
+          current_ = path_.top();
+          return *this;
+        }
+        else if (current_ == path_.top() && current_->right) {
+          current_ = current_->right;
+          while (current_->left) {
+            current_ = current_->left;
+          }
+          return *this;
+        }
+        else {
+          current_ = path_.top();
+          path_.pop();
+          return *this;
+        }
+      }
+
+      Iterator operator++(int) const {
+        Iterator result = *this;
+        result++;
+        return result;
+      }
+
+      Iterator& operator=(Iterator const& rhs) = default;
+      bool operator==(Iterator const& rhs) const {
+        return current_ == rhs.current_;
+      }
+      bool operator!=(Iterator const& rhs) const {
+        return current_ != rhs.current_;
+      }
+    };
+
+    Iterator begin() const { return Iterator{*this}; }
+    Iterator end() const { return Iterator{}; }
   };
 
 
 template<class T>
-  Tree<T> With(Tree<T> const& tree, T value) {
+  Tree<T> Inserted(Tree<T> const& tree, T value) {
     using TreeType = Tree<T>;
     if (tree.empty()) {
       return Tree{TreeType{}, value, TreeType{}};
@@ -68,10 +144,10 @@ template<class T>
     else {
       T root{tree.root()};
       if (value < root) {
-        return Tree{With(tree.left(), value), root, tree.right()};
+        return Tree{Inserted(tree.left(), value), root, tree.right()};
       }
       else if (root < value) {
-        return Tree{tree.left(), root, With(tree.right(), value)};
+        return Tree{tree.left(), root, Inserted(tree.right(), value)};
       }
       else {
         return tree;
@@ -147,4 +223,24 @@ TEST_CASE("The height of a tree") {
     };
     REQUIRE(HeightOf(tree_of_single_element) == consecutively_less_elements.size());
   }
+}
+
+
+std::vector<int> Sort(std::vector<int> v) {
+  std::vector<int> result(std::move(v));
+  std::sort(result.begin(), result.end());
+  return result;
+}
+
+
+TEST_CASE("Trees can be iterated through inorder traversal") {
+  using TreeOfIntegers = Tree<int>;
+
+  static const std::vector<int> ArbitraryIntegers{2, 8, 1, 99, 123, 23, 12};
+  const TreeOfIntegers tree{
+    ArbitraryIntegers.begin(), ArbitraryIntegers.end()
+  };
+
+  const auto SortedIntegers{Sort(ArbitraryIntegers)};
+  std::equal(tree.begin(), tree.end(), SortedIntegers.begin());
 }
