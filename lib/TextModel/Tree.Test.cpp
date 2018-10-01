@@ -294,4 +294,10 @@ TEST_CASE("Trees can be created from a Tree by removing an element") {
   SECTION("if the element doesn't exist it will return the same Tree") {
     REQUIRE(Removed(numbers, 2) == numbers);
   }
+
+  SECTION("tree with an element removed it will have it no more") {
+    static constexpr int ArbitraryElement{231};
+    const auto reduced{Removed(numbers, ArbitraryElement)};
+    REQUIRE(!Has(reduced, ArbitraryElement));
+  }
 }
