@@ -1,6 +1,7 @@
 #include "catch2/catch.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <numeric>
@@ -27,13 +28,12 @@ template<class T>
     };
     NodePtr root_;
 
-    explicit Tree(SharedPtr<const Node> root) noexcept
-    : root_{root} {}
-
   public:
     Tree() = default;
     Tree(Tree const& lhs, T value, Tree const& rhs) noexcept
     : root_{std::make_shared<const Node>(lhs.root_, value, rhs.root_)} {}
+    explicit Tree(NodePtr root) noexcept : root_{root} {}
+
 
     Tree(std::initializer_list<T> init_list) {
       Tree result;
@@ -109,8 +109,8 @@ template<class T>
           return *this;
         }
         else {
-          current_ = path_.top();
           path_.pop();
+          current_ = path_.empty() ? NodePtr{} : path_.top();
           return *this;
         }
       }
@@ -132,6 +132,8 @@ template<class T>
 
     Iterator begin() const { return Iterator{*this}; }
     Iterator end() const { return Iterator{}; }
+    bool operator==(Tree const& rhs) const { return root_ == rhs.root_; }
+    bool operator!=(Tree const& rhs) const { return root_ != rhs.root_; }
   };
 
 
@@ -151,6 +153,46 @@ template<class T>
       }
       else {
         return tree;
+      }
+    }
+  }
+
+template<class T>
+  Tree<T> Removed(Tree<T> const& tree, T value) {
+    using TreeType = Tree<T>;
+    if (tree.empty()) {
+      return tree;
+    }
+    else {
+      const T root{tree.root()};
+      if (value < root) {
+        const auto left = Removed(tree.left(), value);
+        if (left != tree.left()) {
+          return Tree{Removed(tree.left(), value), root, tree.right()};
+        }
+        else {
+          return tree;
+        }
+      }
+      else if (root < value) {
+        const auto right = Removed(tree.right(), value);
+        if (right != tree.right()) {
+          return Tree{tree.left(), root, Removed(tree.right(), value)};
+        }
+        else {
+          return tree;
+        }
+      }
+      else {
+        if (!tree.left().empty()) {
+          return Tree{tree.left().left(), tree.left().root(), tree.right()};
+        }
+        else if (!tree.right().empty()) {
+          return TreeType{TreeType{}, tree.right().root(), tree.right().right()};
+        }
+        else {
+          return {};
+        }
       }
     }
   }
@@ -199,6 +241,7 @@ TEST_CASE("Binary tree can be constructed from any sequence") {
   using TreeOfIntegers = Tree<int>;
   std::vector<int> test_sequence{32, 123, 89, 22};
   TreeOfIntegers tree(test_sequence.begin(), test_sequence.end());
+  std::all_of(test_sequence.begin(), test_sequence.end(), [&tree](const auto v) { return Has(tree, v); });
   REQUIRE(Has(tree, 89));
   REQUIRE(!Has(tree, 100));
 }
@@ -226,21 +269,29 @@ TEST_CASE("The height of a tree") {
 }
 
 
-std::vector<int> Sort(std::vector<int> v) {
-  std::vector<int> result(std::move(v));
-  std::sort(result.begin(), result.end());
-  return result;
-}
+template<typename Container>
+  Container Sorted(Container v) {
+    Container result(std::move(v));
+    std::sort(result.begin(), result.end());
+    return result;
+  }
 
 
 TEST_CASE("Trees can be iterated through inorder traversal") {
   using TreeOfIntegers = Tree<int>;
 
   static const std::vector<int> ArbitraryIntegers{2, 8, 1, 99, 123, 23, 12};
-  const TreeOfIntegers tree{
-    ArbitraryIntegers.begin(), ArbitraryIntegers.end()
-  };
+  const TreeOfIntegers tree{ArbitraryIntegers.begin(), ArbitraryIntegers.end()};
+  const auto SortedIntegers{Sorted(ArbitraryIntegers)};
+  REQUIRE(std::equal(tree.begin(), tree.end(), SortedIntegers.begin()));
+}
 
-  const auto SortedIntegers{Sort(ArbitraryIntegers)};
-  std::equal(tree.begin(), tree.end(), SortedIntegers.begin());
+
+TEST_CASE("Trees can be created from a Tree by removing an element") {
+  using Tree = Tree<int>;
+
+  const Tree numbers{321, 123, 231, 132};
+  SECTION("if the element doesn't exist it will return the same Tree") {
+    REQUIRE(Removed(numbers, 2) == numbers);
+  }
 }
