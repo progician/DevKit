@@ -21,11 +21,11 @@ namespace TextModel {
     using OperationList = std::list<Operation>;
     OperationList operations_;
 
-    struct OperationAt {
+    struct Piece {
       OperationList::iterator which;
       Index relative_index{0};
     };
-    OperationAt operation_at(Index);
+    Piece piece_at(Index);
 
   public:
     PieceTable() = default;

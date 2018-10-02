@@ -5,8 +5,8 @@
 
 namespace TextModel {
 
-  PieceTable::OperationAt
-  PieceTable::operation_at(Index index) {
+  PieceTable::Piece
+  PieceTable::piece_at(Index index) {
     Index current_start{0};
     auto operation_at_index = std::find_if(
         operations_.begin(), operations_.end(),
@@ -33,7 +33,7 @@ namespace TextModel {
     const Index piece_size{piece.size()};
     inserted_.append(std::move(piece));
 
-    auto insertion_point = operation_at(index);
+    auto insertion_point = piece_at(index);
     if (insertion_point.which == operations_.end()) {
       operations_.push_back(Operation{piece_size, inserted_, appending_at});
     }
@@ -59,8 +59,8 @@ namespace TextModel {
 
 
   void PieceTable::remove(Range range) {
-    auto start_operation = operation_at(range.start);
-    auto end_operation = operation_at(range.end);
+    auto start_operation = piece_at(range.start);
+    auto end_operation = piece_at(range.end);
 
     const auto op_to_split = *(end_operation.which);
 
