@@ -8,8 +8,8 @@ add_library(TextModel STATIC
 target_include_directories(TextModel PUBLIC ${TOP_LEVEL_INCLUDE_DIR})
 
 add_executable(TextModelUnit
+  Generics/Tree.Test.cpp
   TextModel/PieceTable.Test.cpp
-  TextModel/Tree.Test.cpp
   TextModel/TextModel_Test.cpp
 )
 target_link_libraries(TextModelUnit PRIVATE TextModel UnitTestMain)
