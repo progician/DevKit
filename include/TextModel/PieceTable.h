@@ -11,21 +11,21 @@ namespace TextModel {
     String original_;
     String inserted_;
 
-    struct Operation {
+    struct Piece {
       Index size;
       String& source;
       Index source_begin;
     };
     Index size_{0};
 
-    using OperationList = std::list<Operation>;
-    OperationList operations_;
+    using Pieces = std::list<Piece>;
+    Pieces pieces_;
 
-    struct Piece {
-      OperationList::iterator which;
+    struct Piece_Result {
+      Pieces::iterator which;
       Index relative_index{0};
     };
-    Piece piece_at(Index);
+    Piece_Result piece_at(Index);
 
   public:
     PieceTable() = default;

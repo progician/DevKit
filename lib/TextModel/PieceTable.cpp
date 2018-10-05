@@ -5,27 +5,27 @@
 
 namespace TextModel {
 
-  PieceTable::Piece
+  PieceTable::Piece_Result
   PieceTable::piece_at(Index index) {
     Index current_start{0};
-    auto operation_at_index = std::find_if(
-        operations_.begin(), operations_.end(),
-        [&current_start, index](const auto& operation) {
-          if (current_start <= index && index < current_start + operation.size) {
+    auto piece_at_index = std::find_if(
+        pieces_.begin(), pieces_.end(),
+        [&current_start, index](const auto& piece) {
+          if (current_start <= index && index < current_start + piece.size) {
             return true;
           }
-          current_start += operation.size;
+          current_start += piece.size;
           return false;
         }
     );
 
-    return {operation_at_index, index - current_start};
+    return {piece_at_index, index - current_start};
   }
 
   PieceTable::PieceTable(String original)
   : original_{std::move(original)}
   , size_{original_.size()}
-  , operations_{{original_.size(), original_, 0}} {}
+  , pieces_{{original_.size(), original_, 0}} {}
 
 
   void PieceTable::insert(Index index, String piece) {
@@ -34,24 +34,24 @@ namespace TextModel {
     inserted_.append(std::move(piece));
 
     auto insertion_point = piece_at(index);
-    if (insertion_point.which == operations_.end()) {
-      operations_.push_back(Operation{piece_size, inserted_, appending_at});
+    if (insertion_point.which == pieces_.end()) {
+      pieces_.push_back(Piece{piece_size, inserted_, appending_at});
     }
     else {
       auto insertion_it = insertion_point.which;
-      const auto operation_at_insertion = *insertion_it;
+      const auto piece_at_insertion = *insertion_it;
       insertion_it->size = insertion_point.relative_index;
 
       ++insertion_it;
-      insertion_it = operations_.insert(insertion_it, {
+      insertion_it = pieces_.insert(insertion_it, {
           piece_size, inserted_, appending_at
       });
 
       ++insertion_it;
-      operations_.insert(insertion_it, {
-          operation_at_insertion.size - insertion_point.relative_index,
-          operation_at_insertion.source,
-          operation_at_insertion.source_begin + insertion_point.relative_index
+      pieces_.insert(insertion_it, {
+          piece_at_insertion.size - insertion_point.relative_index,
+          piece_at_insertion.source,
+          piece_at_insertion.source_begin + insertion_point.relative_index
       });
     }
     size_ += piece_size;
@@ -59,34 +59,34 @@ namespace TextModel {
 
 
   void PieceTable::remove(Range range) {
-    auto start_operation = piece_at(range.start);
-    auto end_operation = piece_at(range.end);
+    auto start_piece = piece_at(range.start);
+    auto end_piece = piece_at(range.end);
 
-    const auto op_to_split = *(end_operation.which);
+    const auto piece_to_split = *(end_piece.which);
 
-    auto it = start_operation.which;
-    if (start_operation.relative_index > 0) {
+    auto it = start_piece.which;
+    if (start_piece.relative_index > 0) {
       it->size = range.start;
       ++it;
     }
 
-    if (it != std::end(operations_)) {
-      operations_.erase(it, end_operation.which);
+    if (it != std::end(pieces_)) {
+      pieces_.erase(it, end_piece.which);
     }
 
-    if (end_operation.relative_index > 0) {
-      operations_.push_back(Operation{
-          op_to_split.size - end_operation.relative_index,
-          op_to_split.source,
-          op_to_split.source_begin + end_operation.relative_index
+    if (end_piece.relative_index > 0) {
+      pieces_.push_back(Piece{
+          piece_to_split.size - end_piece.relative_index,
+          piece_to_split.source,
+          piece_to_split.source_begin + end_piece.relative_index
       });
     }
   }
 
   String PieceTable::text_of(Range) const {
     return std::accumulate(
-        operations_.begin(), operations_.end(), String{},
-        [](String lhs, Operation rhs) {
+        pieces_.begin(), pieces_.end(), String{},
+        [](String lhs, Piece rhs) {
           const String piece{&rhs.source[0] + rhs.source_begin, rhs.size};
           lhs.append(piece);
           return lhs;
