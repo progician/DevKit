@@ -110,7 +110,29 @@ namespace TextModel {
       }
     }
 
-    void remove(Range) override {}
+    void remove(Range range) override {
+      auto pieces_begin{piece_at(range.start)};
+      auto pieces_end{piece_at(range.end)};
+
+      if (pieces_begin.first == pieces_end.first) {
+        pieces_begin.first = pieces_.insert(pieces_begin.first, *pieces_begin.first);
+        pieces_begin.first->length = range.start - pieces_begin.second;
+        pieces_end.first->start_in_storage += range.end - pieces_begin.second;
+        pieces_end.first->length -= range.end - pieces_begin.second;
+      }
+      else {
+        if (range.start - pieces_begin.second > 0) {
+          pieces_begin.first->length = range.start - pieces_begin.second;
+          pieces_begin.first++;
+          pieces_begin.second = 0;
+        }
+        pieces_.erase(pieces_begin.first, pieces_end.first);
+
+        const auto relative_position{range.end - pieces_end.second};
+        pieces_end.first->length -= relative_position;
+        pieces_end.first->start_in_storage += relative_position;
+      }
+    }
 
     String text_of(Range range) const override {
       auto pieces_begin{piece_at(range.start)};
@@ -175,5 +197,42 @@ TEST_CASE("Inserting into the middle of text") {
   SECTION("the full string will contain the inserted string in the middle") {
     const TextModel::Range insertion_range{6, 6 + Inserted.size()};
     REQUIRE(buffer.text_of(insertion_range) == Inserted);
+  }
+}
+
+TEST_CASE("Removing from a text") {
+  TextModel::TextBuffer buffer;
+  static const TextModel::String ArbitraryText{"Hello, World!"};
+  static const TextModel::Index RangeLength{2};
+  buffer.insert(0, ArbitraryText);
+  buffer.remove(TextModel::Range{5, 5 + RangeLength});
+
+  SECTION("the size gets reduced by the length of the range") {
+    REQUIRE(buffer.size() == ArbitraryText.size() - RangeLength);
+  }
+
+  SECTION("the string will be removed from the text") {
+    REQUIRE(TextModel::FullTextOf(buffer) == "HelloWorld!");
+  }
+}
+
+TEST_CASE("Removing a string of insertions") {
+  TextModel::TextBuffer buffer;
+  TextModel::String pieces[] = {
+    "Hello",
+    ", ",
+    "World",
+    "!"
+  };
+  for (const auto& piece : pieces) {
+    buffer.insert(buffer.size(), piece);
+  }
+
+  REQUIRE(TextModel::FullTextOf(buffer) == "Hello, World!");
+
+  SECTION("will work exactly as it was in the middle of a single insertion") {
+    const TextModel::Range range{2, buffer.size() - 1};
+    buffer.remove(range);
+    REQUIRE(TextModel::FullTextOf(buffer) == "He!");
   }
 }
