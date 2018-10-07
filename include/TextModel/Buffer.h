@@ -18,4 +18,8 @@ namespace TextModel {
     virtual String text_of(Range) const = 0;
     virtual Index size() const = 0;
   };
+
+  inline String FullTextOf(Buffer const& buffer) {
+    return buffer.text_of(Range{0, buffer.size()});
+  }
 } // TextModel
