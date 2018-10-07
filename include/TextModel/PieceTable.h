@@ -33,9 +33,9 @@ namespace TextModel {
     ~PieceTable() override = default;
 
     void insert(Index, String) override;
-    void remove(Range) override;
+    void remove(Range const&) override;
 
-    String text_of(Range) const override;
+    String text_of(Range const&) const override;
     Index size() const override;
 
     friend std::ostream& operator<<(std::ostream&, const PieceTable&);

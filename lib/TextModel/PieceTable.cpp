@@ -58,7 +58,7 @@ namespace TextModel {
   }
 
 
-  void PieceTable::remove(Range range) {
+  void PieceTable::remove(Range const& range) {
     auto start_piece = piece_at(range.start);
     auto end_piece = piece_at(range.end);
 
@@ -83,7 +83,7 @@ namespace TextModel {
     }
   }
 
-  String PieceTable::text_of(Range) const {
+  String PieceTable::text_of(Range const&) const {
     return std::accumulate(
         pieces_.begin(), pieces_.end(), String{},
         [](String lhs, Piece rhs) {

@@ -2,6 +2,7 @@
 #include "TextModel/Buffer.h"
 #include "Generics/Tree.h"
 #include <list>
+#include <random>
 
 
 template<class Container, class ForwardIterator, typename T>
@@ -110,7 +111,7 @@ namespace TextModel {
       }
     }
 
-    void remove(Range range) override {
+    void remove(Range const& range) override {
       auto pieces_begin{piece_at(range.start)};
       auto pieces_end{piece_at(range.end)};
 
@@ -134,7 +135,7 @@ namespace TextModel {
       }
     }
 
-    String text_of(Range range) const override {
+    String text_of(Range const& range) const override {
       auto pieces_begin{piece_at(range.start)};
       auto pieces_end{piece_at(range.end)};
 
@@ -173,6 +174,8 @@ namespace TextModel {
     }
   };
 } // TextModel
+
+
 
 TEST_CASE("Building and reading from TextBuffers") {
   TextModel::TextBuffer buffer;
@@ -234,5 +237,19 @@ TEST_CASE("Removing a string of insertions") {
     const TextModel::Range range{2, buffer.size() - 1};
     buffer.remove(range);
     REQUIRE(TextModel::FullTextOf(buffer) == "He!");
+  }
+}
+
+TEST_CASE("Benchmark text buffer", "![benchmark]") {
+  static constexpr size_t SufficientIteration{10000};
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  TextModel::TextBuffer buffer;
+  BENCHMARK("insertion single characters at random position") {
+    for (auto loop_count = 0; loop_count < SufficientIteration; ++loop_count) {
+      std::uniform_int_distribution<TextModel::Index> dist(0, loop_count);
+      const TextModel::Index where = dist(mt);
+      buffer.insert(where, "A");
+    }
   }
 }
