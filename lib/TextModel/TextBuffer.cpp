@@ -52,6 +52,11 @@ namespace TextModel {
   }
 
 
+  TextBuffer::TextBuffer(String str)
+  : original_{std::move(str)}
+  , pieces_{Span{Storage::Original, 0, original_.size()}} {}
+
+
   void TextBuffer::insert(Index index, String text) {
     const auto append_index = inserted_.size();
     inserted_ += text;

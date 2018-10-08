@@ -65,6 +65,11 @@ TEST_CASE("Removing a string of insertions", "[unit]") {
   }
 }
 
+TEST_CASE("TextBuffer can be constructed from a string", "[unit]") {
+  TextModel::TextBuffer buffer{TextModel::String{"Hello, World!"}};
+  REQUIRE(TextModel::FullTextOf(buffer) == "Hello, World!");
+}
+
 TEST_CASE("Benchmark text buffer", "![benchmark]") {
   static constexpr size_t SufficientIteration{10000};
   std::random_device rd;

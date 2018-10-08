@@ -40,6 +40,9 @@ namespace TextModel {
     MutListPosition piece_at(Index index);
   
   public:
+    TextBuffer() = default;
+    explicit TextBuffer(String);
+
     void insert(Index index, String text) override;
     void remove(Range const& range) override;
     String text_of(Range const& range) const override;
